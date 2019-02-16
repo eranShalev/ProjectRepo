@@ -1,0 +1,87 @@
+#include "UI/Communicator.h"
+
+namespace UI
+{
+    Communicator::Communicator()
+    {
+        /* server_addr.sin_family = AF_INET;
+        server_addr.sin_addr.s_addr = INADDR_ANY;
+        server_addr.sin_port = htons(PORT);*/ 
+    }
+
+    Communicator::~Communicator()
+    {
+        
+    }
+
+    /*std::string Communicator::buildSocket()
+    {
+        if ((sockfd = socket(AF_INET, SOCK_STREAM, 0) < 0))
+        {
+            return "couldnt build socket";
+        }
+
+        return "builded socket successfully";
+    }
+
+    std::string Communicator::bindSocket()
+    {
+        if (bind(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0)
+        {
+            return "couldnt bind socket";
+        }
+
+        return "binded the socket successfully";
+    }
+
+    void Communicator::listenSocket()
+    {
+        listen(sockfd, 3);
+    }
+
+    std::string Communicator::acceptSocket()
+    {
+        c = sizeof(struct sockaddr_in);
+        clientSock = accept(sockfd, (struct sockaddr *)&client_addr, (socklen_t *)&c);
+
+        if (clientSock < 0)
+        {
+            return "couldnt accpet";
+        }
+
+        return "accepted connection";
+        }*/
+
+    void Communicator::CreatePipe()
+    {
+        mkfifo(PATH, 0660);
+    }
+
+    std::string Communicator::WritePipe(std::string msg)
+    {
+        int fd;
+
+    std::cout << "going to open fifo file" << std::endl;
+        
+        fd = open(PATH, O_WRONLY);
+
+    std::cout << "opened fifo file successfully" << std::endl;  
+
+        if (fd < 0)
+        {
+            return "couldnt open pipe";
+        }
+    
+
+        write(fd, msg.c_str(), msg.size());
+    
+    std::cout << "wrote to fifo file successfully" << std::endl;    
+
+        close(fd);
+
+    std::cout << "closed fifo file successfully" << std::endl;
+
+        return "wrote to pipe: " + msg;
+    }
+        
+}

@@ -1,0 +1,12 @@
+#pragma once
+
+class CommandHandler
+{
+public:
+    CommandHandler() = default;
+    ~CommandHandler() = default;
+
+    // Handler Methods
+    void HandleStart();
+    void HandleClose();
+};

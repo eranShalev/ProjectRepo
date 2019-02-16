@@ -1,0 +1,16 @@
+{
+    "id": "UI",
+    "type": "package",
+    "value": {
+        "author": "Eran Shalev",
+        "description": "TODO(eran)",
+        "version": "1.0.0",
+        "language": "cpp",
+        "use": ["Jobs"]
+    },
+    "lang.cpp": {
+        "include": ["include", "/usr/include/cryptopp"],
+        "cpp-standard": "c++17",
+        "lib": ["pthread"]
+    }
+}

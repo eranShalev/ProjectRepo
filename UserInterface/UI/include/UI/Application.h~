@@ -1,0 +1,16 @@
+#pragma once
+
+namespace UI
+{
+    class Application
+    {
+    public:
+        Application();
+        virtual ~Application();
+
+        void Run();
+    };
+
+    // To Be Defined In Sandbox
+    Application* CreateApplication();
+}

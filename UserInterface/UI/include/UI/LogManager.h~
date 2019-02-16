@@ -1,0 +1,19 @@
+#pragma once
+
+#include "UI/ProcCommunicator.h"
+
+#inlcude <string>
+
+class LogManager
+{
+ public:
+    LogManager();
+    ~LogManager();
+
+    std::string ShowLogs();
+
+private:
+
+
+};
+

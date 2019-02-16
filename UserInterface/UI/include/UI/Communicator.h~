@@ -1,0 +1,45 @@
+#pragma once
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/types.h> 
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <fcntl.h> 
+#include <sys/stat.h> 
+#include <sys/types.h> 
+#include <unistd.h> 
+#include <string>
+
+#define PORT 17002
+#define PATH "/project/myPipe"
+
+namespace UI
+{
+    class Communicator
+    {
+    public:
+        Communicator();
+        ~Communicator();
+
+        std::string CreatePipe();
+        std::string WritePipe(std::string msg);
+
+        /*std::string buildSocket();
+        std::string bindSocket();
+        void listenSocket();
+        std::string acceptSocket();*/
+
+    private:
+        /*int sockfd;
+        int newsockfd;
+        int portNumber;
+        int clientSock;
+        int c;
+        char buffer[1024];
+        
+        struct sockaddr_in server_addr;
+        struct sockaddr_in client_addr;*/
+    };
+}

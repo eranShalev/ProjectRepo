@@ -1,0 +1,28 @@
+#pragma once
+
+#include "UI/ProcCommunicator.h"
+
+#include <chrono>
+#include <thread>
+
+#define PROC_RESET_PATH "/proc/logs_proc"
+#define DEFAULT_TIMER_TIME 20
+
+class ThreadManager
+{
+ private:
+    int _seconds_count;    
+    bool _activated;
+    int _timer;
+    int _reset_time;
+
+public:
+    ThreadManager();
+    ~ThreadManager();
+    void CountSeconds();
+    int GetSeconds();
+    void SendReset();
+    void ShutDown();
+    void SetResetTime(int minutes);
+        
+};

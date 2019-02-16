@@ -1,0 +1,153 @@
+#include "UI/StatisticsHandler.h"
+
+#include <iostream>
+
+StatisticsHandler::StatisticsHandler() :_running(false) { }
+
+StatisticsHandler::~StatisticsHandler() { }
+
+std::string StatisticsHandler::Exit()
+{
+    _running = false;
+    return "Exiting Statistics Interface";
+}
+
+std::string StatisticsHandler::Start()
+{
+    _running = true;
+    return "Entered Statistics Interface";
+}
+
+bool StatisticsHandler::isRunning()
+{
+    return _running;
+}
+
+void StatisticsHandler::ParseDataFlow(std::string& stats)
+{
+    std::vector<std::string> data;
+    
+    Helper::ParseByChar(stats, ',' ,data);
+    
+    if (std::stoi(data[0]) == 0)
+    {
+        stats = "no packets captured\n";
+    }
+    else
+    {
+        stats = "Amount of packets: " + data[0] + "\n";
+        stats += "Incoming Packets: " + data[1] + " ---> " + std::to_string( 100 * std::stoi(data[1]) / std::stoi(data[0])) + "%\n";
+        stats += "Outoing Packets: " + data[2] + " ---> " + std::to_string( 100 * std::stoi(data[2]) / std::stoi(data[0])) + "%\n";
+        stats += "Accepted Packets: " + data[3] + " ---> " + std::to_string( 100 * std::stoi(data[3]) / std::stoi(data[0])) + "%\n";
+        stats += "Dropped Packets: " + data[4] + " ---> " + std::to_string( 100 * std::stoi(data[4]) / std::stoi(data[0])) + "%\n";
+        stats += "Accepted Incoming Packets: " + data[5] + "\n";
+        stats += "Dropped Incoming Packets: " + data[6] + "\n";
+        stats += "Accepted Outgoing Packets: " + data[7] + "\n";
+        stats += "Dropped Outgoing Packets: " + data[8] + "\n"; 
+    }
+    
+}
+
+bool StatisticsHandler::SetStatistics(std::string stats)
+{
+    std::ofstream proc;
+
+    std::ifstream check_proc (COUNTER_PROC_PATH);
+
+    if (check_proc.good())
+    {
+        proc.open(COUNTER_PROC_PATH);
+    
+        if (proc.is_open())
+        {
+            proc << stats;
+            proc.close();
+
+            return true;
+        }
+    }
+
+    return false;
+}
+
+std::string StatisticsHandler::GetDataFlowStatistics()
+{
+    std::fstream proc;
+    std::string data = "";    
+    
+    if (!SetStatistics(DATA_FLOW_MESSAGE))
+    {
+        return "Error: Kernel Not Loaded";
+    }
+    
+    proc.open(COUNTER_PROC_PATH);
+
+    if (proc.is_open())
+    {
+        while(!proc.eof())
+        {
+            proc >> data;
+        }
+
+        proc.close();
+    }
+
+    ParseDataFlow(data);
+    
+    return data;
+}
+
+std::string StatisticsHandler::GetGeneralRulesStatistics()
+{
+    std::fstream proc;
+    std::string line = "";
+
+    if(!SetStatistics(GENERAL_RULES_MESSAGE))
+    {
+        return "Error: Kernel not loaded";
+    }
+    
+    proc.open(COUNTER_PROC_PATH);
+
+    if (proc.is_open())
+    {
+        while(!proc.eof())
+        {
+            proc >> line;
+        }
+
+        proc.close();
+    }
+    
+    return line;
+}
+
+std::string StatisticsHandler::GetSpecificRuleStatistics()
+{
+    std::fstream proc;
+    std::string line = "";
+
+    if(!SetStatistics(SPECIFIC_RULE_MESSAGE))
+    {
+        return "Error:  Kernel not loaded";
+    }
+    
+    proc.open(COUNTER_PROC_PATH);    
+    
+    if (proc.is_open())
+    {
+        while(!proc.eof())
+        {
+            proc >> line;
+        }
+
+        proc.close();
+    }
+    
+    return line;
+}
+
+std::string StatisticsHandler::Help()
+{
+    return "Statistics options:\nData - shows data flow statistics\nGeneral Rules - shows general rules statistics\nSpecific Rule - shows statistics about a specific rule\nExit - exits the statistics Interface";
+}

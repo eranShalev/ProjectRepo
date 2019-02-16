@@ -1,0 +1,8 @@
+#include "UI/Helper.h"
+
+static bool Helper::IsNumber(const std::string& number)
+{
+    return !number.empty() && std::find_if(number.begin(), 
+        number.end(), [](char c) { return !std::isdigit(c); }) == number.end();
+
+}

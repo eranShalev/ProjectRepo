@@ -1,0 +1,9 @@
+#include "UI/UrlHandler.h"
+
+UrlHandler::UrlHandler() { }
+UrlHandler::~UrlHandler() { }
+
+std::string UrlHandler::Add()
+{
+    
+}

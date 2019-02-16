@@ -1,0 +1,1 @@
+cmd_/home/magshimim/dev/afula-1402-firewall/KernelModule/build/Kernel.ko := ld -r -m elf_x86_64 -T ./scripts/module-common.lds --build-id  -o /home/magshimim/dev/afula-1402-firewall/KernelModule/build/Kernel.ko /home/magshimim/dev/afula-1402-firewall/KernelModule/build/Kernel.o /home/magshimim/dev/afula-1402-firewall/KernelModule/build/Kernel.mod.o

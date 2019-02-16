@@ -1,0 +1,9 @@
+#include "CommandHandler.h"
+
+namespace UI
+{
+    std::string CommandHandler::HandleStart()
+    {
+    std:
+    }
+}

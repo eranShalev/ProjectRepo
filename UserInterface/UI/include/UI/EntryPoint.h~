@@ -1,0 +1,11 @@
+#pragma once
+
+namespace UI
+{
+    extern Application* CreateApplication();
+
+    int main()
+    {
+        std::cout << "Entered Application!" << std::endl;
+    }
+}

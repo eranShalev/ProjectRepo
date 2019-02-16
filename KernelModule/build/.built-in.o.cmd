@@ -1,0 +1,1 @@
+cmd_/home/magshimim/dev/afula-1402-firewall/KernelModule/build/built-in.o :=  rm -f /home/magshimim/dev/afula-1402-firewall/KernelModule/build/built-in.o; ar rcsD /home/magshimim/dev/afula-1402-firewall/KernelModule/build/built-in.o

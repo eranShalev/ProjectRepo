@@ -1,0 +1,61 @@
+#include "UI/ThreadManager.h"
+
+#include <iostream>
+
+ThreadManager::ThreadManager() :
+    _seconds_count(0),  _activated(true), _timer(0),
+    _reset_time(DEFAULT_TIMER_TIME * 60)
+{
+    
+}
+
+ThreadManager::~ThreadManager()
+{
+    _activated = false;
+}
+
+int ThreadManager::GetSeconds()
+{
+    int temp = _seconds_count;
+    _seconds_count = 0;
+    
+    return temp;
+}
+
+void ThreadManager::ShutDown()
+{
+    _activated = false;
+}
+
+void ThreadManager::SetResetTime(int minutes)
+{
+    _reset_time = minutes * 60;
+}
+
+void ThreadManager::CountSeconds()
+{
+    while (_activated)
+    {
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        _seconds_count++;        
+
+    }    
+}
+
+void ThreadManager::SendReset()
+{
+    std::string message = "reset";
+    
+    while (_activated)
+    {
+        _timer++;        
+
+        if (_timer >= _reset_time)
+        {
+            _timer = 0;
+            ProcCommunicator::WriteProc(message, PROC_RESET_PATH);
+        }
+
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
+}

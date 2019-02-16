@@ -1,0 +1,17 @@
+{
+    "id": "Sandbox",
+    "type": "application",
+    "value": {
+        "author": "Eran Shalev",
+        "description": "TODO(eran)",
+        "version": "1.0.0",
+        "language": "cpp",
+        "public": false,
+        "use": ["UI", "Jobs"]
+    },
+    "lang.cpp": {
+        "include": ["include", "../UI/include"],
+        "cpp-standard": "c++17"
+    }
+}
+

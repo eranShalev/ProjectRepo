@@ -1,0 +1,6 @@
+#include "UI/LogManager.h"
+
+LogManager::LogManager()
+{
+    
+}

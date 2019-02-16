@@ -1,0 +1,12 @@
+{
+    "id": "Test",
+    "type": "application",
+    "value": {
+        "language": "cpp",
+        "public": false,
+        "use": ["Jobs"]
+    },
+    "lang.cpp": {
+        "cpp-standard": "c++17"
+    }
+}

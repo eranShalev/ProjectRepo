@@ -1,0 +1,18 @@
+#include "UI/Application.h"
+#include <iostream>
+
+namespace UI
+{
+    Application::Application()
+    {
+    }
+
+    Application::~Application()
+    {
+    }
+
+    void Run()
+    {
+        std::cout << "Application Is Running!" < std::endl;
+    }
+}

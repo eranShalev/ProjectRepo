@@ -1,0 +1,16 @@
+#pragma once
+#include <string>
+#include <fstream>
+
+#define PROC_PATH "/proc/my_proc"
+#define WRITE_SUCCESS 1
+#define ERR_WRITE 0
+
+class ProcCommunicator
+{
+ public:
+    ProcCommunicator();
+    ~ProcCommunicator();
+
+    int WriteProc(std::string& msg);
+};

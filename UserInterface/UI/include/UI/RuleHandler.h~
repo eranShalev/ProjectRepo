@@ -1,0 +1,44 @@
+#include <string>
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <sstream>
+#include <algorithm>
+#include <arpa/inet.h>
+#define FILE_NAME "rule_file.txt"
+#define PROC_PATH "/proc/my_proc"
+
+class RuleHandler
+{
+ public:
+    RuleHandler();
+    ~RuleHandler();
+
+    bool IsNumber(const std::string& s);
+    std::string Rules();
+    std::string Exit();
+    std::string Print();
+    std::string GetPacketSource();
+    std::string GetPacketParameter();
+    std::string GetPort();
+    std::string GetIp();
+    std::string GetProtocol();
+    std::string GetPacketType();
+    int ExtractId(const std::string& s);
+    std::string Add();
+    std::string Remove(std::string removeRule);
+    std::string Help();
+    std::string Clean(std::string command);
+    void InitializeRules();
+    bool Active();
+    
+ private:
+    bool _isActive;
+};
+
+
+
+
+
+
+
