@@ -17,6 +17,7 @@
 #define PROC_NAME "my_proc"
 #define DB_PROC_NAME "logs_proc"
 #define COUNTER_PROC_NAME "firewall_counter"
+#define USER_SPACE_PROC "user_space_proc"
 #define TCP_ID 6
 #define UDP_ID 17
 #define ICMP_ID 1
@@ -31,17 +32,21 @@
 #define IP_MF       0x2000      /* Flag: "More Fragments"   */
 #define IP_OFFSET   0x1FFF      /* "Fragment Offset" part   */
 #define MAX_XMAS_COUNT 20
-#define MAX_SYN_COUNT 20
-#define MAX_UNIQUE_PORTS 10
+#define MAX_SYN_COUNT 1000
+#define MAX_UNIQUE_PORTS 20
 #define PACKET_TIL_LOG 100
 #define RESET_BUFF_MAX_LENGTH 20
 #define RESET_MSG "reset"
 #define RESET_HOSTS_MSG "reset_hosts"
+#define INCOMING_QUEUE 9
+#define OUTGOING_QUEUE 10
+#define TLS_ID 56
 
 static int proc_length = 0;
 static int db_proc_length = 0;
 static int reset_buff_length = 0;
 static int counter_buff_length = 0;
+static int user_space_length = 0;
 
 static int packet_count = 0;
 
@@ -49,6 +54,7 @@ static char msg[MAX_PROC_SIZE];
 static char db_msg[MAX_PROC_SIZE];
 static char reset_msg[RESET_BUFF_MAX_LENGTH];
 static char counter_msg[MAX_PROC_SIZE];
+static char user_space_msg[MAX_PROC_SIZE];
 
 static int count_incoming_packet = 0;
 static int count_outgoing_packet = 0;
@@ -98,6 +104,16 @@ char * protocolToString(enum protocol_type protocol)
     }
 }
 
+
+struct socket_list
+{
+    char destIp[16];
+    int homePort;
+    int destPort;
+    
+    struct list_head list;
+};
+
 struct firewall_rules
 {
     int id;
@@ -131,6 +147,7 @@ struct firewall_rules drop_outgoing_rules;
 struct firewall_rules drop_incoming_dynamic;
 
 struct suspicious_host suspect_list;
+struct socket_list sock_list;
 
 void freeSuspiciousHosts(void);
 
@@ -331,7 +348,40 @@ void createPortRule(struct firewall_rules * ruleList, bool source, char * rule)
 
     INIT_LIST_HEAD(&node->list);
 
-    list_add(&(node->list), &(ruleList->list));    
+    list_add(&(node->list), &(ruleList->list));
+}
+
+long getPortFromParameters(char * parameters)
+{
+    long res;
+    char port_parameter[6];
+    char * substr = strchr(parameters, ',');
+    int index  = (int)(substr-parameters);
+    
+    memcpy(port_parameter, parameters, index);
+    port_parameter[index] = '\0';
+    kstrtol(port_parameter, 10, &res);
+    
+    return res;    
+}
+
+void createSocket(char * parameters)
+{
+    struct socket_list* node;
+    char * substr = strchr(parameters, ',');
+    int index  = (int)(substr-parameters);
+    
+    node = (struct socket_list *)kmalloc(sizeof(struct socket_list), GFP_KERNEL);
+           
+    node->homePort = getPortFromParameters(parameters);
+    node->destPort = getPortFromParameters(parameters + index + 1);
+    index = (int)(strchr(parameters + index + 1, ',') - parameters);
+    memcpy(node->destIp, &parameters[index + 1], strlen(parameters) - (index+1));
+    
+    INIT_LIST_HEAD(&node->list);
+
+    list_add(&(node->list), &(sock_list.list));
+    printk(KERN_INFO "added socket info:\nHome Port: %d and Dest Port: %d\nDest Ip is: %s\n" ,node->homePort, node->destPort, node->destIp);  
 }
 
 void createRuleByType(struct firewall_rules * ruleList, char * rule)
@@ -630,7 +680,6 @@ ssize_t read_counter_proc(struct file *filp,char *buf,size_t count,loff_t *offp 
     return count;
 }
 
-
 ssize_t write_reset_proc(struct file *filp,const char *buf,size_t count,loff_t *offp)
 {
     if (count > RESET_BUFF_MAX_LENGTH)
@@ -712,11 +761,11 @@ ssize_t read_proc(struct file *filp,char *buf,size_t count,loff_t *offp )
     }
   
     copy_to_user(buf, msg, count);
-
     finished = 1;
 
     return count;
 }
+
 
 ssize_t write_proc(struct file *filp,const char *buf,size_t count,loff_t *offp)
 {
@@ -745,12 +794,33 @@ ssize_t write_proc(struct file *filp,const char *buf,size_t count,loff_t *offp)
             removeRule(msg);
         }
     }
-    
-
-    
+        
     printk(KERN_INFO "message is: %s" ,msg);
-
     return proc_length;
+}
+
+ssize_t user_space_write(struct file *filp,const char *buf,size_t count,loff_t *offp)
+{
+    if (count > MAX_PROC_SIZE)
+    {
+        user_space_length = MAX_PROC_SIZE;
+    }
+    else
+    {
+        user_space_length = count;
+    }
+
+    copy_from_user(user_space_msg, buf, user_space_length);
+    
+    user_space_msg[user_space_length] = '\0';
+    
+    if (user_space_length > 2)
+    {
+        createSocket(user_space_msg);
+    }
+        
+    printk(KERN_INFO "message is: %s" ,user_space_msg);
+    return user_space_length;
 }
 
 /*static int module_permission(struct inode *inode, int op, struct nameidata *foo)
@@ -782,10 +852,15 @@ static struct file_operations counter_proc_fops = {
  owner: THIS_MODULE 
 };
 
+static struct file_operations user_space_proc_fops = {
+ write: user_space_write,
+ owner: THIS_MODULE 
+};
 
 struct proc_dir_entry *proc_file_entry;
 struct proc_dir_entry* db_proc_file;
 struct proc_dir_entry* counter_proc_file;
+struct proc_dir_entry* user_space_proc_file;
 
 static struct nf_hook_ops nfho;
 static struct nf_hook_ops nfho_out;
@@ -853,6 +928,39 @@ bool scanRules(struct packet_headers packet, struct firewall_rules * ruleList, b
     }
         
     return false;       
+}
+
+bool scanSockets(bool is_incoming, struct packet_headers packet)
+{
+    struct list_head * pos;
+    struct socket_list * tmp;
+    
+    if (is_incoming)
+    {
+        list_for_each(pos, &sock_list.list)
+        {
+            tmp = list_entry(pos, struct socket_list, list);
+        
+            if ((packet.destPort == tmp->homePort) && (!strcmp(packet.sourceIp, tmp->destIp)) && packet.sourcePort == tmp->destPort)
+            {
+                return true;
+            }        
+        }
+    }
+    else
+    {
+        list_for_each(pos, &sock_list.list)
+        {
+            tmp = list_entry(pos, struct socket_list, list);            
+            
+            if ((packet.destPort == tmp->destPort) && (!strcmp(packet.destIp, tmp->destIp)) && packet.sourcePort == tmp->homePort);
+            {
+                return true;
+            }
+        }
+    }
+    
+    return false;    
 }
 
 void setUDPValues(struct packet_headers * packet, struct udphdr * udp_hdr)
@@ -942,6 +1050,7 @@ bool shouldDropSuspect(struct packet_headers packet, bool is_syn, bool is_xmas)
 
                 if (tmp->syn_count == MAX_SYN_COUNT)
                 {
+                    printk(KERN_INFO "blocking suspect for syn ack flood\n");
                     return true;
                 }
                                                 
@@ -957,24 +1066,32 @@ bool shouldDropSuspect(struct packet_headers packet, bool is_syn, bool is_xmas)
             }
 
             for (i = 0; i < MAX_UNIQUE_PORTS; i++)
+            {
+                if (tmp->ports[i] == packet.destPort)
                 {
-                    if (tmp->ports[i] == packet.destPort)
-                    {
-                        return false;
-                    }
-                    else if (tmp->ports[i] == -1)
-                    {
-                        tmp->ports[i] = packet.destPort;
-
-                        return false;
-                    }                
+                    return false;
                 }
+                else if (tmp->ports[i] == -1)
+                {
+                    tmp->ports[i] = packet.destPort;
+                    return false;
+                }                
+            }
+            
+            if (tmp->xmas_count >= MAX_XMAS_COUNT)
+            {
+                printk(KERN_INFO "blocking suspect for XMAS packets\n");
+            }
+            else
+            {
+                printk(KERN_INFO "blocking suspect for filled out ports\n");
+            }
             
             return true;
         }
     }
     
-    addSuspiciousHost(packet, is_syn);    
+    addSuspiciousHost(packet, is_syn);
     return false;   
 }
 
@@ -1056,6 +1173,7 @@ unsigned int hook_out(void *priv, struct sk_buff *skb, const struct nf_hook_stat
     struct tcphdr *tcp_header = NULL;
     struct udphdr *udp_header = NULL;
     struct packet_headers headers;
+    bool isHigher = false;
     packet_count++;
     count_outgoing_packet++;
     
@@ -1078,6 +1196,11 @@ unsigned int hook_out(void *priv, struct sk_buff *skb, const struct nf_hook_stat
         if (tcp_header)
         {
             setTCPValues(&headers, tcp_header);
+            
+            if (headers.destPort == 80)
+            {
+                isHigher = true;
+            }
         }
     }
     else if (ip_header->protocol == UDP_ID)
@@ -1090,6 +1213,10 @@ unsigned int hook_out(void *priv, struct sk_buff *skb, const struct nf_hook_stat
         {
             setUDPValues(&headers, udp_header);
         }
+    }
+    else
+    {
+        printk(KERN_INFO "packet id is: %d", ip_header->protocol);
     }
     
     if (scanRules(headers, &accept_outgoing_rules, true))
@@ -1106,6 +1233,10 @@ unsigned int hook_out(void *priv, struct sk_buff *skb, const struct nf_hook_stat
         count_accepted_packets++;
         count_accepted_outgoing_packets++;
         return NF_ACCEPT;
+    }
+    else if (isHigher && scanSockets(false, headers))
+    {
+        return NF_DROP;
     }
     else if (scanRules(headers, &drop_outgoing_rules, false))
     {
@@ -1124,6 +1255,10 @@ unsigned int hook_out(void *priv, struct sk_buff *skb, const struct nf_hook_stat
         return NF_DROP;
     }
 
+    if (isHigher)
+    {
+        return NF_QUEUE_NR(OUTGOING_QUEUE);
+    }
     
     //printk(KERN_INFO  "activating firewall policy\n");    
 
@@ -1139,6 +1274,7 @@ unsigned int hook_func(void *priv, struct sk_buff *skb, const struct nf_hook_sta
     struct udphdr *udp_header = NULL;
     char dynamicRule [100] = "";
     struct packet_headers headers;
+    bool isHigher  = false;
     packet_count++;
     count_incoming_packet++;
 
@@ -1162,6 +1298,11 @@ unsigned int hook_func(void *priv, struct sk_buff *skb, const struct nf_hook_sta
         if (tcp_header)
         {
             setTCPValues(&headers, tcp_header);
+            
+            if (headers.sourcePort == 80 || headers.sourcePort == 443)
+            {            
+                isHigher = true;
+            }
         }
     }
     else if (ip_header->protocol == UDP_ID)
@@ -1185,7 +1326,12 @@ unsigned int hook_func(void *priv, struct sk_buff *skb, const struct nf_hook_sta
             logPacket(headers, true, false, "ICMP fragment");
             return NF_DROP;
         }                            
+    }    
+    else
+    {
+        printk(KERN_INFO "packet id is: %d", ip_header->protocol);
     }
+    
     if (scanRules(headers, &accept_incoming_rules, true))
     {
         //printk(KERN_INFO "packet accepted\n");
@@ -1199,6 +1345,10 @@ unsigned int hook_func(void *priv, struct sk_buff *skb, const struct nf_hook_sta
         count_accepted_incoming_packets++;
         count_accepted_by_user_rules++;
         return NF_ACCEPT;
+    }
+    else if (isHigher && scanSockets(true, headers))
+    {
+        return NF_DROP;
     }
     else if (scanRules(headers, &drop_incoming_rules, false))
     {
@@ -1269,7 +1419,11 @@ unsigned int hook_func(void *priv, struct sk_buff *skb, const struct nf_hook_sta
             printk("adding dynamic rule: %s\n", dynamicRule);
             freeSuspiciousHost(headers.sourceIp);
             return NF_DROP;
-        }
+        }       
+        else if (isHigher)
+        {
+            return NF_QUEUE_NR(INCOMING_QUEUE);
+        }                    
     }
     else if (udp_header)
     {
@@ -1299,6 +1453,21 @@ void freeSuspiciousHosts(void)
     list_for_each_safe(pos, q, &suspect_list.list)
     {
         tmp = list_entry(pos, struct suspicious_host, list);
+        {
+            list_del(pos);
+            kfree(tmp);
+        }
+    }
+}
+
+void freeSockList(void)
+{
+    struct list_head * pos, *q;
+    struct socket_list * tmp;
+
+    list_for_each_safe(pos, q, &sock_list.list)
+    {
+        tmp = list_entry(pos, struct socket_list, list);
         {
             list_del(pos);
             kfree(tmp);
@@ -1382,6 +1551,7 @@ void freeLists(void)
     freeList(&drop_outgoing_rules);
     freeList(&drop_incoming_dynamic);
     freeSuspiciousHosts();
+    freeSockList();
 }
 
 MODULE_LICENSE("GPL");
@@ -1412,8 +1582,16 @@ int init_module()
         printk(KERN_ALERT "failed creating proc file");
         return -ENOMEM;
     }
+
+    user_space_proc_file = proc_create(USER_SPACE_PROC, 0, NULL, &user_space_proc_fops);
+
+    if (!user_space_proc_file)
+    {
+        printk(KERN_ALERT "failed creating user space file");
+        return -ENOMEM;
+    }
     
-    printk(KERN_ALERT "Hello");
+    printk(KERN_ALERT "FINISHED INITIALIZING PROCS");
     
     //initializing incoming hook
     nfho.hook = hook_func;                       
@@ -1437,6 +1615,7 @@ int init_module()
     INIT_LIST_HEAD(&drop_outgoing_rules.list);
     INIT_LIST_HEAD(&drop_incoming_dynamic.list);
     INIT_LIST_HEAD(&suspect_list.list);
+    INIT_LIST_HEAD(&sock_list.list);
     nf_register_net_hook(&init_net, &nfho);
     nf_register_net_hook(&init_net, &nfho_out);
     
@@ -1445,11 +1624,14 @@ int init_module()
 
 void cleanup_module()
 {
+    printk(KERN_ALERT "Bye");
     remove_proc_entry(PROC_NAME, NULL);
     remove_proc_entry(DB_PROC_NAME, NULL);
     remove_proc_entry(COUNTER_PROC_NAME, NULL);
-    printk(KERN_ALERT "Bye");
+    remove_proc_entry(USER_SPACE_PROC, NULL);   
+    
     nf_unregister_net_hook(&init_net, &nfho);
     nf_unregister_net_hook(&init_net, &nfho_out);
     freeLists();
 }
+

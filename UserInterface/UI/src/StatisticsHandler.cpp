@@ -35,39 +35,12 @@ namespace UI
         return _running;
     }
 
-    bool StatisticsHandler::getId(std::vector<std::string>& id_list)
+    void StatisticsHandler::getId(std::vector<std::string>& id_list, std::string min, std::string max)
     {
-        std::string min;
-        std::string max;
-    
-        do
-        {
-            std::cout << "Enter min rule id (press c to cancel): ";
-            std::getline(std::cin, min);
-        } while (!Helper::IsNumber(min) && min != "c");
-
-        if (min == "c")
-        {
-            return false;
-        }
-
-        do
-        {
-            std::cout << "Enter max rule id (press c to cancel): ";
-            std::getline(std::cin, max);
-        } while (!Helper::IsNumber(max) && max != "c");
-
-        if (max == "c")
-        {
-            return false;
-        }
-    
         for (int i = std::stoi(min); i <=std::stoi(max); i++)
         {
             id_list.push_back(std::to_string(i));
         }
-
-        return true;
     }
 
     void StatisticsHandler::ParseDataFlow(std::string& stats)
@@ -154,7 +127,7 @@ namespace UI
     {
         std::fstream proc;
         std::string line = "";
-        std::string message = SPECIFIC_RULE_MESSAGE;    
+        std::string message = SPECIFIC_RULE_MESSAGE;
     
         if(!SetStatistics(message + id))
         {
@@ -237,17 +210,30 @@ namespace UI
         return line;
     }
 
-    std::string StatisticsHandler::GetSpecificRuleStatistics()
+    std::string StatisticsHandler::GetSpecificRuleStatistics(std::vector<std::string>& commandParts)
     {
         std::vector<std::string> id_list;
         std::string message = "";
         std::string retMsg = "";
     
-        if (getId(id_list))
+        if (commandParts.size() == 3 && Helper::IsNumber(commandParts[1]) && Helper::IsNumber(commandParts[2]))
         {
+            if (std::stoi(commandParts[1]) > std::stoi(commandParts[2]))
+            {
+                return "aborted action";
+            }
+            
+            getId(id_list, commandParts[1], commandParts[2]);
+            
             for (std::string id : id_list)
             {
                 message = GetRuleStatistics(id);
+                
+                if (message == "Error: firewall not running")
+                {
+                    retMsg = "\n" + message + "\n";
+                    break;
+                }
 
                 if (message != ERROR_ID_NOT_FOUND)
                 {
@@ -263,15 +249,13 @@ namespace UI
                     return retMsg;
                 }
             }
-
             return retMsg;
         }
-
         return "Aborted Action";
     }
 
     std::string StatisticsHandler::Help()
     {
-        return "\nStatistics options:\nData - shows data flow statistics\nGeneral Rules - shows general rules statistics\nSpecific Rule - shows statistics about a specific rule\nExit - exits the statistics Interface";
+        return "\nStatistics options:\ndata - shows data flow statistics\ngeneral - shows general rules statistics\nrule [x-y] - shows statistics about a specific range of rules\nExit - exits the statistics Interface";
     }   
 }

@@ -9,13 +9,14 @@
         "use": ["Jobs"]
     },
     "lang.cpp": {
-        "include": ["${locate include}", "/usr/include/cryptopp"],
+        "include": ["${locate include}"],
         "cpp-standard": "c++17",
         "lib": ["pthread"]
     },
     "dependee": {
         "lang.cpp": {
-            "include": ["${locate include}"]
+            "include": ["${locate include}"],
+            "lib": ["UI"]
         }
     }
 }

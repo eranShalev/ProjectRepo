@@ -1,4 +1,5 @@
 #include "Sandbox.h"
+
 #include <iostream>
 #include <string>
 
@@ -15,6 +16,7 @@ public:
 
     void OnStartup() override
     {
+        _isGUI = false;
         UI::Application::OnStartup();
     }
 
@@ -34,6 +36,7 @@ private:
     {
         std::cout << "-> ";
         std::getline(std::cin, _currCommand);
+        boost::trim(_currCommand);
     }    
 };
 

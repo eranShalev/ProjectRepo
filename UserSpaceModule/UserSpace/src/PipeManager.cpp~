@@ -1,0 +1,96 @@
+#include "UserSpace/PipeManager.h"
+#include <iostream>
+
+PipeManager::PipeManager()
+    : _incoming(INCOMING_QUEUE_NUM), _outgoing(OUTGOING_QUEUE_NUM)
+{
+}
+
+PipeManager::~PipeManager()
+{    
+}
+
+void PipeManager::Run()
+{
+    std::string msg = "";
+    char pipe_msg[80] = "";
+    int fd;
+    
+    _incoming.InitializeQueue();
+    _outgoing.InitializeQueue();
+
+    std::thread incomingThread(&PacketQueue::StartFilter, &_incoming);
+    std::thread outgoingThread(&PacketQueue::StartFilter, &_outgoing);
+    
+    incomingThread.detach();
+    outgoingThread.detach();
+
+    while (msg != "01")
+    {
+        fd = open(PIPE_PATH, O_RDONLY);
+        read(fd, pipe_msg, 80);
+        std::cout << "message from pipe is : " << pipe_msg << std::endl; 
+        msg = pipe_msg;        
+        close(fd);
+        
+        if (msg == "00")
+        {
+            StartFiltering();
+        }
+        if (msg == "01")
+        {            
+            Close();
+        }
+        else if (msg ==  "02")
+        {            
+            Restart();
+        }
+        else if (msg == "03")
+        {
+            StopFiltering();
+        }
+        else if (msg.substr(0, 2) == "07")
+        {
+            AddUrl(msg);
+        }
+        else if (msg.substr(0, 2) == "08")
+        {
+            RemoveUrl(msg);
+        }
+    }    
+}
+
+void PipeManager::StartFiltering()
+{
+    _incoming.StartFilter();
+    _outgoing.StartFilter();
+}
+
+void PipeManager::AddUrl(const std::string& msg)
+{
+    PacketQueue::_rules.add_url(msg.substr(3));
+}
+
+void PipeManager::RemoveUrl(const std::string& msg)
+{
+    PacketQueue::_rules.del_url(msg.substr(3));
+}
+
+void PipeManager::StopFiltering()
+{
+    _incoming.StopFilter();
+    _outgoing.StopFilter();
+}
+
+void PipeManager::Restart()
+{
+    //Delete all Url Rules;
+}
+
+void PipeManager::Close()
+{
+    _incoming.StopFilter();
+    _outgoing.StopFilter();
+    _incoming.DestroyQueue();
+    _outgoing.DestroyQueue();    
+}

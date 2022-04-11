@@ -1,0 +1,7 @@
+[submodule "UserSpaceModule/Tests/vendor/googletest"]
+	path = UserSpaceModule/Tests/vendor/googletest
+	url = https://github.com/google/googletest
+[submodule "UserInterface/UI/vendor/Jobs"]
+	path = UserInterface/UI/vendor/Jobs
+	url = https://github.com/yuvaldolev/jobs
+

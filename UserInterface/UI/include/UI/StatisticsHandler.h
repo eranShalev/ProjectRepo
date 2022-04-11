@@ -26,7 +26,7 @@ namespace UI
         bool SetStatistics(std::string stats);
         std::string GetDataFlowStatistics();
         std::string GetGeneralRulesStatistics();
-        std::string GetSpecificRuleStatistics();
+        std::string GetSpecificRuleStatistics(std::vector<std::string>& commandParts);
         std::string GetRuleStatistics(std::string id);
         std::string Help();
         void ParseDataFlow(std::string& stats);
@@ -35,7 +35,7 @@ namespace UI
         bool isRunning();
         std::string Start();
         std::string Exit();
-        bool getId(std::vector<std::string>& id_list);
+        void getId(std::vector<std::string>& id_list, std::string min, std::string max);
         void UpdateTime(time_t new_time);
     
         ThreadManager _threadManager;

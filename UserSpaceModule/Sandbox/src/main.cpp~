@@ -1,0 +1,183 @@
+#include "Sandbox.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <netinet/in.h>
+#include <linux/types.h>
+#include <linux/netfilter.h>
+#include <linux/ip.h>
+#include <linux/tcp.h>
+#include <linux/udp.h>
+#include <libnetfilter_queue/libnetfilter_queue.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <thread>
+#include <iostream>
+
+#define COMMAND_TYPE 2
+#define DEC 10
+#define INCOMMING_QUEUE_NUM 0
+#define OUTGOING_QUEUE_NUM 1
+#define PIPE_PATH "/tmp/myfifo"
+#define MAX_PIPE_SIZE 1024
+
+using std::thread;
+
+bool filter = false;
+bool stop = false;
+struct nfq_handle* h;
+struct nfq_q_handle* incomming_qh;
+struct nfq_q_handle* outgoing_qh;
+rules url_rules;
+
+static int outgoing_cb(struct nfq_q_handle* qh, struct nfgenmsg* nfmsg, struct nfq_data* nfa, void* data)
+{
+    u_int32_t id;
+    unsigned char* payload_data;
+    size_t len = 0;
+    ssize_t read;
+    struct nfqnl_msg_packet_hdr *ph;
+   
+    ph = nfq_get_msg_packet_hdr(nfa);
+    id = ntohl(ph->packet_id);
+    
+    nfq_get_payload(nfa, &payload_data);
+           
+    return nfq_set_verdict(qh, id, NF_ACCEPT, 0, NULL);
+}
+
+static int incomming_cb(struct nfq_q_handle *qh, struct nfgenmsg *nfmsg, struct nfq_data *nfa, void *data)
+{
+    u_int32_t id;
+    unsigned char* payload_data;
+    size_t len = 0;
+    ssize_t read;
+    struct nfqnl_msg_packet_hdr *ph;
+        
+    ph = nfq_get_msg_packet_hdr(nfa);
+    id = ntohl(ph->packet_id);
+    
+    nfq_get_payload(nfa, &payload_data);
+    
+    return nfq_set_verdict(qh, id, NF_ACCEPT, 0, NULL);
+}
+
+
+/* the thread that gets messeges from the pipe */
+     
+void pipe_thread()
+{
+    int fd;
+    char pipe_msg[80] = ""; 
+    printf("entered pipe thread\n");   
+
+    while(pipe_msg != "03")
+    {
+        fd = open(PIPE_PATH, O_RDONLY);
+        read(fd, pipe_msg, 80);
+        printf("Message Recieved: %s\n", pipe_msg);
+        close(fd);
+        if(pipe_msg == "00")
+        {
+            filter = true;
+        }
+        if(pipe_msg == "01")
+        {
+            
+            stop = true;
+            return;
+        }
+        else if(pipe_msg ==  "02")
+        {
+            nfq_destroy_queue(qh);
+            nfq_create_queue(h, QUEUE_NUM, &cb, NULL);
+            nfq_set_mode(qh, NFQNL_COPY_PACKET, 0xffff);
+        }
+        else if(pipe_msg == "03")
+        {
+            filter = false;
+        }
+        else if(pipe_msg.substr(0, COMMAND_TYPE) == "07")
+        {
+            url_rules.add_url(pipe_msg.substr(COMMAND_TYPE + 1));
+        }
+        else if(pipe_msg.substr(0, COMMAND_TYPE) == "08")
+        {
+            url_rules.del_url(pipe_msg.substr(COMMAND_TYPE + 1));
+        }
+    }
+}
+
+int main(int argc, char **argv)
+{
+    int fd;
+    int rv;
+    char buf[4096] __attribute__ ((aligned));
+    char* type;
+    url_rules = new rules();
+
+    printf("opening library handle\n");
+    h = nfq_open();
+    if (!h)
+    {
+        fprintf(stderr, "error during nfq_open()\n");
+        exit(1);
+    }
+
+    printf("binding this socket to queue %d\n", QUEUE_NUM);
+    qh = nfq_create_queue(h, QUEUE_NUM, &cb, NULL);
+    if (!qh)
+    printf("binding this socket to queue '%d'\n",INCOMMING_QUEUE_NUM);
+    incomming_qh = nfq_create_queue(h, INCOMMING_QUEUE_NUM, &incomming_cb, NULL);
+    if (!incomming_qh)
+    {
+        fprintf(stderr, "error opening incomming_qh\n");
+        exit(1);
+    }
+
+    printf("binding this socket to queue '%d'\n", OUTGOING_QUEUE_NUM);
+    outgoing_qh = nfq_create_queue(h, OUTGOING_QUEUE_NUM, &outgoing_cb, NULL);
+    if(!outgoing_qh)
+    {
+        fprintf(stderr, "error opening outgoing_qh\n");
+        exit(1);
+    }
+
+    printf("setting copy_packet mode\n");
+    if (nfq_set_mode(incomming_qh, NFQNL_COPY_PACKET, 0xffff) < 0 && nfq_set_mode(outgoing_qh, NFQL_COPY_PACKET, 0xffff) < 0)
+    {
+        fprintf(stderr, "can't set packet_copy mode\n");
+        exit(1);
+    }
+    
+    fd = nfq_fd(h);
+
+    thread pipe(pipe_thread);
+    
+    printf("starting the loop\n");
+    while(!stop)
+    {
+        if(!filter)
+        {
+            continue;
+        }        
+        else
+        {
+            rv = recv(fd, buf, sizeof(buf), 0);
+            printf("pkt received\n");
+            nfq_handle_packet(h, buf, rv);
+        }
+    }
+    //delete url_rules;
+    pipe.join();
+       
+    exit(0);
+}
+
+
+int main()
+{
+    return 0;
+}

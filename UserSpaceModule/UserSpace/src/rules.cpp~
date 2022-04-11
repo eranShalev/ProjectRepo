@@ -1,0 +1,36 @@
+#include "UserSpace/Rules.h"
+
+/*rules::rules()
+{
+    this->urls = new vector<string>();
+}
+
+rules::~rules()
+{
+    this->rules.clear();
+    delete rules;
+}
+
+void rules::add_url(string url)
+{
+    this->rules.push_back(url);
+}
+
+void rules::del_url(string index)
+{
+    int i = atoi(index);
+    this->rules.erase(rules.begin() + i - 1);
+}
+
+bool rules::check(string url)
+{
+    for(int i = 0; i < this->rules.size(); i++)
+    {
+        if(this->rules[i] == url)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+*/

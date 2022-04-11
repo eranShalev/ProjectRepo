@@ -1,0 +1,27 @@
+#include "UserSpace/OutgoingQueue.h"
+
+OutgoingQueue::OutgoingQueue(int id)
+    : PacketQueue(id)
+{
+}
+
+OutgoingQueue::~OutgoingQueue()
+{   
+}
+
+int OutgoingQueue::CallBackFunc(struct nfq_q_handle* qh, struct nfgenmsg* nfmsg, struct nfq_data* nfa, void* data)
+{
+    u_int32_t id;
+    unsigned char* payload_data;
+    struct nfqnl_msg_packet_hdr *ph;
+   
+    ph = nfq_get_msg_packet_hdr(nfa);
+    id = ntohl(ph->packet_id);
+    
+    nfq_get_payload(nfa, &payload_data);
+
+    //TcpPacket packet = new TcpPacket(payload_data, false);
+           
+    return nfq_set_verdict(qh, id, NF_ACCEPT, 0, NULL);
+}
+

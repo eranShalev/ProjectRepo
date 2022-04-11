@@ -105,7 +105,7 @@ namespace UI
         s << std::endl << "start - start filtering packets" << std::endl;
         s << "stop - stop filtering packets" << std::endl;
         s << "restart - restarts the firewall " << std::endl;
-        s << "settings - enters the settings" << std::endl;
+        s << "stats - shows the statistics" << std::endl;
         s << "logs - show logs of captured packets" << std::endl;
         s << "rules - enter the rule section to add, edit and delete rules" << std::endl;
         s << "close - shutdowns the whole firewall including the user interface" << std::endl;
@@ -113,3 +113,4 @@ namespace UI
         return s.str();
     }
 }
+

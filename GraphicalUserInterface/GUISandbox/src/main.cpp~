@@ -1,0 +1,65 @@
+#define IS_GUISANDBOX
+
+#include "GUISandbox.h"
+#include "GeneralGUI.h"
+
+#include <stdio.h>
+#include <unistd.h>
+
+#include <iostream>
+#include <string>
+
+class GUISandbox : public UI::Application
+{
+public:
+    GUISandbox()
+    {
+    }
+    
+    ~GUISandbox()
+    {
+    }
+    
+    void OnStartup() override
+    {
+        _isGUI = true;
+        _currCommand = "none";
+        StartGUI(0, nullptr);
+        UI::Application::OnStartup();
+    }
+    
+    void OnUpdate() override
+    {
+        std::cout << "going to recieve command" << std::endl;
+        RcvCommand();
+        
+        if (_currCommand != "none")
+        {
+            std::cout << "command updated to: " << _currCommand << std::endl;
+            std::cout << OnUpdateImpl() << std::endl;
+        }
+        
+        _currCommand = "none";
+        
+    }
+    
+    void OnShutdown() override
+    {
+        UI::Application::OnShutdown();
+        ShutDownGUI();
+    }
+private:
+    void RcvCommand()
+    {
+        /*std::cout << "-> ";
+          std::getline(std::cin, _currCommand);*/
+        _currCommand = RunGUI();
+        std::cout << "finished running iteration of GUI" << std::endl;
+    }
+};
+
+UI::Application* UI::CreateApplication()
+{
+    return new GUISandbox();
+}
+

@@ -1,0 +1,22 @@
+{
+    "id": "UserSpace",
+    "type": "package",
+    "value": {
+        "author": "Roei Gabizon",
+        "description": "User Space Filtering for Firewall",
+        "version": "1.0.0",
+        "language": "cpp",
+        "public": true
+    },
+    "lang.cpp": {
+        "include": ["${locate include}", "/usr/local/include"],
+        "cpp-standard": "c++17",
+        "lib": ["pthread", "netfilter_queue", "nfnetlink"]
+    },
+    "dependee" : {
+        "lang.cpp": {
+            "include": ["${locate include}", "/usr/local/include"],
+            "lib": ["UserSpace"]
+        }
+    }
+}

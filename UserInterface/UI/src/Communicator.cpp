@@ -40,8 +40,9 @@ namespace UI
         for (std::string rule : rules)
         {
             std::this_thread::sleep_for (std::chrono::milliseconds(10));
-            WritePipe(rule);
+            WritePipe("07 " + rule);
         }
     }
         
 }
+

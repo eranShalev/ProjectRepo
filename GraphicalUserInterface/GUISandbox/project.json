@@ -1,0 +1,18 @@
+{
+    "id": "GUISandbox",
+    "type": "application",
+    "value": {
+        "author": "John Doe",
+        "description": "A web framework for venture capitalists",
+        "version": "0.0.0",
+        "language": "cpp",
+        "use": ["UI", "Jobs"]
+    },
+    "lang.cpp": {
+        "cpp-standard": "c++17",
+        "include": ["include", "pthread", "/usr/include/gtk-3.0", "/usr/include/at-spi2-atk/2.0", "/usr/include/at-spi-2.0", "/usr/include/dbus-1.0", "/usr/lib/x86_64-linux-gnu/dbus-1.0/include", "/usr/include/gtk-3.0", "/usr/include/gio-unix-2.0/", "/usr/include/mirclient", "/usr/include/mircore", "/usr/include/mircookie", "/usr/include/cairo", "/usr/include/pango-1.0", "/usr/include/harfbuzz", "/usr/include/pango-1.0", "/usr/include/atk-1.0", "/usr/include/cairo", "/usr/include/pixman-1", "/usr/include/freetype2", "/usr/include/libpng12", "/usr/include/gdk-pixbuf-2.0", "/usr/include/libpng12", "/usr/include/glib-2.0", "/usr/lib/x86_64-linux-gnu/glib-2.0/include"],
+        "lib": ["pthread", "gtk-3", "gdk-3", "pangocairo-1.0", "pango-1.0", "atk-1.0", "cairo-gobject", "cairo", "gdk_pixbuf-2.0", "gio-2.0", "gobject-2.0", "glib-2.0"]
+    }
+}
+
+

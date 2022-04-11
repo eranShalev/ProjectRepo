@@ -1,0 +1,16 @@
+{
+    "id": "Sandbox",
+    "type": "application",
+    "value": {
+        "author": "Roei Gabizon",
+        "description": "User Space Filtering for Firewall",
+        "version": "1.0.0",
+        "language": "cpp",
+        "public": true,
+        "use": ["UserSpace"]
+    },
+    "lang.cpp": {
+        "include": ["include"],
+        "cpp-standard": "c++17"
+    }
+}

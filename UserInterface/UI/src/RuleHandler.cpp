@@ -4,6 +4,7 @@
 #include <arpa/inet.h>
 
 #include <algorithm>
+
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -11,6 +12,8 @@
 
 namespace UI
 {
+    std::string RuleHandler::path = "none";
+    
     RuleHandler::RuleHandler() : _isActive(false)
     {
     }
@@ -19,148 +22,97 @@ namespace UI
     {
     }
 
-    std::string RuleHandler::GetPort()
-    {
-        std::string port;
-        while (true)
+    bool RuleHandler::CheckPort(std::string& msg)
+    {        
+        if (Helper::IsNumber(msg))
         {
-            std::cout << "Enter Port number: ";
-            std::getline(std::cin, port);
+            if (std::stoi(msg) < 65535)
+            {
+                return true;
+            }
+        }
         
-            if (Helper::IsNumber(port))
-            {
-                if (std::stoi(port) < 65535)
-                {
-                    return port;
-                }
-            }
-
-            std::cout << "Invalid Port Number!" << std::endl;
-        }
-    
+        return false;
     }
 
-    std::string RuleHandler::GetIp()
-    {
-        std::string ip;
-        while (true)
+    bool RuleHandler::CheckIp(std::string& msg)
+    {   
+        struct sockaddr_in sa;
+        if (inet_pton(AF_INET, msg.c_str(), &(sa.sin_addr)) == 1)
         {
-            std::cout << "Enter IP address: ";
-            std::getline(std::cin, ip);
+            return true;
+        }
         
-            struct sockaddr_in sa;
-            if (inet_pton(AF_INET, ip.c_str(), &(sa.sin_addr)) == 1)
-            {
-                return ip;
-            }
-            std::cout << "Invalid IP address" << std::endl;
-        }
-    
+        return false;
     }
 
-    std::string RuleHandler::GetProtocol()
+    bool RuleHandler::CheckProtocol(std::string& msg)
     {
-        std::string protocol;
-    
-        while (true)
+        if (msg == "TCP" || msg == "UDP")
         {
-            std::cout << "Enter Protocol (TCP/UDP): ";
-            std::getline(std::cin, protocol);
+            return true;
+        }
         
-            if (protocol == "TCP" || protocol == "UDP")
-            {
-                return protocol;
-            }
-        
-            std::cout << "Invalid protocol" << std::endl;
-        }
-    
+        return false;
     }
 
-    std::string RuleHandler::GetPacketSource()
+    std::string RuleHandler::GetPacketSource(std::string& msg)
     {
-        std::string decision;
-    
-        while (true)
+        if (msg == "y")
         {
-            std::cout << "Filter entering packets? (y/n/ to cancel press c)" << std::endl;
-
-            std::getline(std::cin, decision);
-
-            if (decision == "y")
-            {
-                return "incoming,";
-            }
-            else if (decision == "n")
-            {
-                return "outgoing,";
-            }
-            else if (decision == "c")
-            {
-                return "exit";
-            }
+            return "incoming,";
+        }
+        else if (msg == "n")
+        {
+            return "outgoing,";
+        }
+        else
+        {
+            return "exit";
         }
     }
 
-    std::string RuleHandler::GetPacketParameter()
+    std::string RuleHandler::GetPacketParameter(std::vector<std::string>& msg)
     {
-        std::string decision;
-    
-        while (true)
+        if (msg[2] == "dip" && CheckIp(msg[3]))
         {
-            std::cout << "Choose packet parameter (dip/sip/dport/sport/protocol/ to cancel press c)" << std::endl;
-
-            std::getline(std::cin, decision);
-
-            if (decision == "dip")
-            {
-                return "dip="+GetIp()+",";
-            }
-            else if (decision == "sip")
-            {
-                return "sip="+GetIp()+",";
-            }
-            else if (decision == "dport")
-            {
-                return "dport="+GetPort()+",";
-            }
-            else if (decision == "sport")
-            {
-                return "sport="+GetPort()+ ",";
-            }
-            else if (decision == "protocol")
-            {
-                return "protocol=" + GetProtocol() + ",";
-            }
-            else if (decision == "c")
-            {
-                return "exit";
-            }
+            return "dip=" + msg[3] + ",";
+        }
+        else if  (msg[2] == "sip" && CheckIp(msg[3]))
+        {
+            return "sip=" + msg[3] + ",";
+        }
+        else if (msg[2] == "dport" && CheckPort(msg[3]))
+        {
+            return "dport=" + msg[3] + ",";
+        }
+        else if (msg[2] == "sport" && CheckPort(msg[3]))
+        {
+            return "sport=" + msg[3] + ",";
+        }
+        else if (msg[2] == "protocol" && CheckProtocol(msg[3]))
+        {
+            return "protocol=" + msg[3] + ",";
+        }
+        else
+        {
+            return "exit";
         }
     }
 
-    std::string RuleHandler::GetPacketType()
+    std::string RuleHandler::GetPacketType(std::string& msg)
     {
-        std::string decision;
-    
-        while(true)
+        if (msg == "y")
         {
-            std::cout << "Accept Packet? (y/n/ to cancel press c)" << std::endl;
-
-            std::getline(std::cin, decision);
-
-            if (decision == "y")
-            {
-                return "accept";
-            }
-            else if (decision == "n")
-            {
-                return "drop";
-            }
-            else if (decision == "c")
-            {
-                return "exit";
-            }
+            return "accept";
+        }
+        else if (msg == "n")
+        {
+            return "drop";
+        }
+        else
+        {
+            return "exit";
         }
     }
 
@@ -170,7 +122,7 @@ namespace UI
         std::string ruleList = "";
         std::fstream fs;
         
-        fs.open(FILE_NAME, std::ios::in);
+        fs.open(path.c_str(), std::ios::in);
         int ruleId = 0;
     
         if (fs.is_open())
@@ -193,13 +145,18 @@ namespace UI
         return "couldnt open file";
     }
 
-    std::string RuleHandler::Add()
+    std::string RuleHandler::Add(std::vector<std::string>& commandParts)
     {
         std::string retMsg;
         std::fstream fs;
         std::string rule;
+        
+        if (commandParts.size() != 5)
+        {
+            return "Error: Wrong Formatting";
+        }
     
-        retMsg = GetPacketSource();
+        retMsg = GetPacketSource(commandParts[1]);
 
         if (retMsg == "exit")
         {
@@ -208,7 +165,7 @@ namespace UI
 
         rule = retMsg;
 
-        retMsg = GetPacketParameter();
+        retMsg = GetPacketParameter(commandParts);
 
         if (retMsg == "exit")
         {
@@ -217,7 +174,7 @@ namespace UI
 
         rule += retMsg;
 
-        retMsg = GetPacketType();
+        retMsg = GetPacketType(commandParts[4]);
 
         if (retMsg == "exit")
         {
@@ -226,7 +183,7 @@ namespace UI
 
         rule += retMsg;
     
-        fs.open(FILE_NAME, std::ios::out | std::ios::app);
+        fs.open(path, std::ios::out | std::ios::app);
     
         if (fs.is_open())
         {
@@ -249,11 +206,12 @@ namespace UI
 
     std::string RuleHandler::Rules()
     {
-        std::ifstream f(FILE_NAME);
+        //std::cout << path << std::endl;
+        std::ifstream f(path);
 
         if (!f.good())
         {
-            std::ofstream fs(FILE_NAME);
+            std::ofstream fs(path);
 
             if (fs.is_open())
             {
@@ -287,7 +245,7 @@ namespace UI
                 bool check = false;
             
                 temp.open("temp.txt");
-                fs.open(FILE_NAME);
+                fs.open(path);
             
                 if (fs.is_open())
                 {
@@ -306,8 +264,8 @@ namespace UI
 
                     fs.close();
                     temp.close();
-                    remove(FILE_NAME);
-                    rename("temp.txt", FILE_NAME);
+                    remove(path.c_str());
+                    rename("temp.txt", path.c_str());
                 }
             
                 std::string procMsg = "05 ";
@@ -328,6 +286,8 @@ namespace UI
         return "Remove Failed";
     }
 
+    
+
     std::vector<std::string> RuleHandler::InitializeRules()
     {
         std::fstream ruleFile;
@@ -335,7 +295,7 @@ namespace UI
         std::ofstream procFile;
         std::vector<std::string> rules;
     
-        ruleFile.open(FILE_NAME);
+        ruleFile.open(path);
 
         if (ruleFile.is_open())
         {
@@ -384,7 +344,7 @@ namespace UI
 
     std::string RuleHandler::Help()
     {
-        return "\nAdd [Rule] - add the rule\nRemove [line] - remove the speicifc rule in line\nPrint - shows the complete list of rules\nExit - exit rule interface and return to normal one\n";
+        return "\nadd [y/n (incoming/outgoing) parameter (sip/dip/sport/dport/protocol)\nvalue(TCP/UDP/ip/port) y/n(accept/drop)] - add the rule\nremove [line number] - remove the specific rule in line\nprint - shows the complete list of rules\nadd url [url] - adds a new url to the blacklist (works for HTTP only)\nremove url [line number] - removes a url from the blacklist\nprint url - prints all the blacklisted urls\nExit - exit rule interface and return to normal one\n";
     }
 
     std::string RuleHandler::Clean(std::string command)
@@ -400,18 +360,39 @@ namespace UI
     
     }
 
-    std::string RuleHandler::AddUrl()
+    std::string RuleHandler::AddUrl(std::vector<std::string>& commandParts)
     {
-        return _urlHandler.Add();
+        return _urlHandler.Add(commandParts);
     }
 
-    std::string RuleHandler::RemoveUrl()
+    std::string RuleHandler::RemoveUrl(std::vector<std::string>& commandParts)
     {
-        return _urlHandler.Remove();
+        return _urlHandler.Remove(commandParts);
     }
 
     std::string RuleHandler::PrintUrl()
     {
         return _urlHandler.Print();
-    }   
+    }
+
+    std::vector<std::string> RuleHandler::GetUrls()
+    {
+        return _urlHandler.GetUrls();
+    }
+    
+    void RuleHandler::SetPath(bool isGUI)
+    {
+        if (isGUI)
+        {
+            RuleHandler::path = "../UserInterface/rule_file.txt";
+        }
+        else
+        {
+            RuleHandler::path = "rule_file.txt";
+        }
+        
+        
+        _urlHandler.SetPath(isGUI);
+        _urlHandler.InitializeFile();
+    }
 }

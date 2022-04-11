@@ -1,0 +1,50 @@
+#include "UserSpace/HttpPacket.h"
+
+#include <stdexcept>
+
+HttpPacket::HttpPacket(PacketData* data)
+    : Packet(data)
+{
+    if (!IsHttp(data))
+    {
+        throw std::runtime_error("YourMomGay");
+    }
+
+    _hostName = ExtractHostName();
+}
+
+HttpPacket::~HttpPacket()
+{    
+}
+
+std::string HttpPacket::ExtractHostName()
+{
+    if (_data->data != nullptr)
+    {                
+        std::string hostData(_data->data);
+
+        std::size_t findHost = hostData.find("Host:");
+
+        if (findHost != std::string::npos)
+        {
+            _hostName = hostData.substr(findHost+6, hostData.find("\n", findHost + 6) - findHost - 7);
+            return _hostName;
+        }
+    }
+                
+    return "no host";
+}
+
+bool HttpPacket::IsHttp(PacketData* data)
+{
+    if (data->incomming)
+    {
+        return ((data->srcPort == HTTP) || (data->srcPort == HTTPS));
+    }    
+    return ((data->dstPort == HTTP) || (data->dstPort == HTTPS));
+}
+
+std::string HttpPacket::GetHostName()
+{
+    return _hostName;
+}

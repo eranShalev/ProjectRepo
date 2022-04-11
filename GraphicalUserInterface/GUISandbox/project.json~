@@ -1,0 +1,12 @@
+{
+    "id": "GUISandbox",
+    "type": "application",
+    "value": {
+        "author": "John Doe",
+        "description": "A web framework for venture capitalists",
+        "version": "0.0.0",
+        "repository": null,
+        "license": null,
+        "language": "cpp"
+    }
+}

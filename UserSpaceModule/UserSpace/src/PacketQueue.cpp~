@@ -1,0 +1,75 @@
+#include "UserSpace/PacketQueue.h"
+
+#include <iostream>
+
+rules PacketQueue::_rules;
+
+PacketQueue::PacketQueue(int id)
+    : _id(id)
+{
+    _key.lock();
+}
+
+PacketQueue::~PacketQueue()
+{
+}
+
+void PacketQueue::InitializeQueue()
+{
+    library_handle = nfq_open();
+
+    if (!library_handle)
+    {
+        //TODO: throw exception
+        std::cout << "Couldnt Initialize Library Handle in Queue Num: " << _id << std::endl;
+        return;
+    }
+
+    _fd = nfq_fd(library_handle);
+
+    queue_handle = nfq_create_queue(library_handle, _id, &CallBackFunc, NULL);
+
+    if (!queue_handle)
+    {
+        //TODO: throw exception
+        std::cout << "Couldnt Initialize Queue Handle in Queue NUm: " << _id << std::endl;
+        return;
+    }
+
+    if (nfq_set_mode(queue_handle, NFQNL_COPY_PACKET, 0xffff) < 0)
+    {
+        //TODO: throw exception
+        std::cout << "couldnt set mode of Queue num: " << _id << std::endl;
+        return;
+    }
+}
+
+void PacketQueue::DestroyQueue()
+{
+    nfq_destroy_queue(queue_handle);
+    nfq_close(library_handle);
+}
+
+void PacketQueue::FilterPackets()
+{
+    int rv;
+    
+    while (true)
+    {
+        _key.lock();
+        rv = recv(_fd, _buf, sizeof(_buf), 0);
+        printf("pkt received\n");
+        nfq_handle_packet(library_handle, _buf, rv);
+        _key.unlock();
+    }
+}
+
+void PacketQueue::StartFilter()
+{
+    _key.unlock();
+}
+
+bool PacketQueue::StopFilter()
+{
+    return _key.try_lock();
+}

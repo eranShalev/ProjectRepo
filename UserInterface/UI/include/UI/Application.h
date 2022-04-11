@@ -2,6 +2,7 @@
 #include <string>
 #include <iostream>
 #include <fstream>
+
 #include "UI/CommandHandler.h"
 #include "UI/Communicator.h"
 #include "UI/RuleHandler.h"
@@ -26,17 +27,19 @@ namespace UI
 
         // Other Methods
         std::string ProcessCommand();
-
-        //        void Test();
         
     protected:
-        std::string _currCommand;
-
         std::string OnUpdateImpl();
+        
+        static std::string _currCommand;
+        
+        bool _isGUI;
         
     private:
         bool _isRunning;
         bool _sentRules;
+        bool _kernelActive;
+        std::vector<std::string> _commandParts;
         std::vector<std::string> _rules;
         std::vector<std::thread*> _threads;
         CommandHandler _handler;
@@ -59,3 +62,4 @@ namespace UI
     // To Be Defined In Sandbox
     Application* CreateApplication();
 }
+

@@ -1,0 +1,89 @@
+#include "UserSpace/Packet.h"
+/*
+packet::packet(unsigned char* payload_data, bool incoming): incomming(incoming)
+{
+    struct in_addr addr;
+    struct iphdr* ip_hdr;
+    struct tcphdr* tcp_hdr;
+    struct udphdr* udp_hdr;
+    ip_hdr = ((struct iphdr*)payload_data);
+    addr.s_addr = ip_hdr->saddr;
+    this->_src_ip = inet_ntoa(addr);
+    addr.s_addr = ip_hdr->daddr;
+    this->_dst_ip = inet_ntoa(addr);
+    if(ip_hdr->protocol == TCP)
+    {
+        this->_protocol = "TCP";
+        tcp_hdr = (struct tcphdr*)(payload_data + (ip_hdr->ihl << 2));
+        this->_src_port = (unsigned int)ntohs(tcp_hdr->source);
+        this->_dst_port = (unsigned int)ntohs(tcp_hdr->dest);
+    }
+    else if(ip_hdr->protocol == UDP)
+    {
+        this->_protocol = "UDP";
+        udp_hdr = (struct udphdr*)(payload_data + (ip_hdr->ihl << 2));
+        this->_src_port = (unsigned int)ntohs(udp_hdr->source);
+        this->_dst_port = (unsigned int)ntohs(udp_hdr->dest);
+    }
+    else
+    {
+        this->_protocol = "else";
+    }
+
+    if(this->_incomming)
+    {
+        if(this->_src_port == HTTP)
+            this->_higher_layer_protocol = "HTTP";
+        else if(this->_src_port == HTTPS)
+            this->_higher_layer_protocol = "HTTPS";
+        else
+            this->_higher_layer_protocol = "else";
+    }
+    else
+    {
+        if(this->_dst_port == HTTP)
+            this->_higher_layer_protocol = "HTTP";
+        else if(this->_dst_port = HTTPS)
+            this->_higher_layer_protocol = "HTTPS";
+        else
+            this->_higher_layer_protocol = "else";
+    }
+}
+
+packet::~packet(){}
+
+string packet::get_src_ip()
+{
+    return this->src_ip;
+}
+
+string packet::get_dst_ip()
+{
+    return this->dst_ip;
+}
+
+int packet::get_src_port()
+{
+    return this->src_port;
+}
+
+int packet::get_dst_port()
+{
+    return this->dst_port;
+}
+
+string packet::get_protocol()
+{
+    return this->protocol;
+}
+
+bool packet::is_incomming()
+{
+    return this->incomming;
+}
+
+string packet::get_higher_layer_protocol()
+{
+    return this->_higher_layer_protocol;
+}
+*/

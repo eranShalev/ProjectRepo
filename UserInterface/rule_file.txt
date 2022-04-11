@@ -1,1 +1,3 @@
-incoming,protocol=TCP,accept
+incoming,sip=1.2.3.4,drop
+incoming,dip=1.2.3.4,drop
+outgoing,protocol=TCP,drop

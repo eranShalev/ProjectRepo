@@ -2,27 +2,20 @@
 
 namespace UI
 {
+    std::string UrlHandler::path = "none";
+    
     UrlHandler::UrlHandler()
     {
-        std::ifstream f(URL_FILE);
-        std::string url;
-    
-        if (f.good())
-        {
-            while (getline(f, url))
-            {
-                _urls.push_back(url);
-            }
-        }
+        
     }
 
     UrlHandler::~UrlHandler()
     {
-        remove(URL_FILE);
+        remove(path.c_str());
 
         std::ofstream url_file;
 
-        url_file.open(URL_FILE);
+        url_file.open(path);
 
         if(url_file.is_open())
         {
@@ -31,59 +24,39 @@ namespace UI
                 url_file << url << std::endl;
             }
         }
-    }
-
-    std::string UrlHandler::Add()
+    }   
+    std::string UrlHandler::Add(std::vector<std::string>& commandParts)
     {
-        std::string url = " ";
-
-        while (url != "c")
+        
+        if (commandParts.size() == 3)
         {
-            std::cout << "enter the url you wish to block (to cancel press c)" << std::endl;
-            std::getline(std::cin, url);
-
-            if (IsUrlValid(url))
+            if (!AlreadyExists(commandParts[2]))
             {
-                _urls.push_back(url);
-                return url;
+                _urls.push_back(commandParts[2]);
+                return commandParts[2];
             }
-            else
-            {
-                std::cout << "Invalid url" << std::endl;
-            }
+   
         }
-    
         return "no url was added";
     }
 
-    std::string UrlHandler::Remove()
+    std::string UrlHandler::Remove(std::vector<std::string>& commandParts)
     {
-        std::string index = " ";
-    
-        while (index != "c")
+        if (Helper::IsNumber(commandParts[2]))
         {
-            std::cout << "url index to remvoe (press c to cancel): ";
-            std::getline(std::cin, index);
-
-            if (index == "c")
+            unsigned int validIndex = std::stoi(commandParts[2]);
+            if (validIndex > _urls.size() || validIndex < 1)
             {
-                break;
+                return "index out of bonds";
             }
-            else if (Helper::IsNumber(index))
+            else
             {
-                unsigned int validIndex = std::stoi(index);
-                if (validIndex > _urls.size() || validIndex < 1)
-                {
-                    std::cout << "index out of bonds" << std::endl;
-                }
-                else
-                {
-                    _urls.erase(_urls.begin() + validIndex-1);
+                _urls.erase(_urls.begin() + validIndex-1);
 
-                    return index;
-                }
+                return commandParts[2];
             }
         }
+        
         return "remove failed";
     }
 
@@ -116,5 +89,48 @@ namespace UI
         return "Add url - add a url to block\nRemove url - removes a url from the list\nprint url - prints all the blocked urls";
     }
 
+    std::vector<std::string> UrlHandler::GetUrls()
+    {        
+        return _urls;
+    }
+
+    bool UrlHandler::AlreadyExists(const std::string& url)
+    {
+        for (std::string nowUrl : _urls)
+        {
+            if (nowUrl == url)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+    
+    void UrlHandler::SetPath(bool isGUI)
+    {
+        if (isGUI)
+        {
+            UrlHandler::path = "../UserInterface/urls.text";
+        }
+        else
+        {
+            UrlHandler::path = "urls.text";
+        }
+    }
+    
+    void UrlHandler::InitializeFile()
+    {
+        std::ifstream f(path);
+        std::string url;
+    
+        if (f.good())
+        {
+            while (getline(f, url))
+            {
+                _urls.push_back(url);
+            }
+        }
+    }
 }
 
